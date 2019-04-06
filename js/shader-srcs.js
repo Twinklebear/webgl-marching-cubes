@@ -99,7 +99,7 @@ void main(void) {
 	float offset = wang_hash(int(gl_FragCoord.x + float(canvas_dims.x) * gl_FragCoord.y));
 	vec3 p = transformed_eye + (t_hit.x + offset * dt) * ray_dir;
 	float t;
-	for (t = t_hit.x; t < t_hit.y; t += dt) {
+	for (t = t_hit.x; t <= t_hit.y; t += dt) {
 		float val = texture(volume, p).r;
 		vec4 val_color = vec4(texture(colormap, vec2(val, 0.5)).rgb, val);
 		// Opacity correction
@@ -111,17 +111,6 @@ void main(void) {
 		}
 		p += ray_dir * dt;
 	}
-	// Is this needed?
-	p = transformed_eye + (t_hit.y + offset * dt) * ray_dir;
-	float val = texture(volume, p).r;
-	vec4 val_color = vec4(texture(colormap, vec2(val, 0.5)).rgb, val);
-	// Opacity correction todo: account for the difference in step size of the
-	// last shading step
-	if (t != t_hit.y) {
-	//	val_color.a = 1.0 - pow(1.0 - val_color.a, (t_hit.y - t) / dt_scale);
-	}
-	color.rgb += (1.0 - color.a) * val_color.a * val_color.rgb;
-	color.a += (1.0 - color.a) * val_color.a;
 }`;
 
 var isosurfaceVertShader =
@@ -154,7 +143,7 @@ void main(void) {
 	//color = texture(colormap, vec2(isovalue, 0.5));
 	//color.a = 1.0;
 	//color = vec4(vec3(0.1), 1.0);
-	color = vec4(vec3(1.0), 1.0);
+	color = vec4(vec3(0.8, 0.8, 0.2), 1.0);
 }`;
 
 var quadVertShader =

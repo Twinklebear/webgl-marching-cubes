@@ -120,7 +120,7 @@ var renderLoop = function() {
 		return;
 	}
 	var startTime = new Date();
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearColor(1.0, 1.0, 1.0, 1.0);
 	gl.clearDepth(1.0);
 
 	// Reset the sampling rate and camera for new volumes
