@@ -141,9 +141,8 @@ out vec4 color;
 
 void main(void) {
 	//color = texture(colormap, vec2(isovalue, 0.5));
-	//color.a = 1.0;
-	//color = vec4(vec3(0.1), 1.0);
-	color = vec4(vec3(0.8, 0.8, 0.2), 1.0);
+	color = vec4(0.5);
+	color.a = 1.0;
 }`;
 
 var quadVertShader =
