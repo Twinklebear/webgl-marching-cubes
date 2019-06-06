@@ -385,6 +385,23 @@ var marchingCubes = function(volume, dims, isovalue) {
 				 *  v0------e0-------v1     O--x
 				 */
 
+				/* Paul Bourke's cube, has just a 90 deg. rotation about x from mine
+				 *
+				 *      v4------e4------v5
+				 *     / |              /|
+				 *   e7  |            e5 |
+				 *   /   e8           /  |
+				 *  /    |           /   e9
+				 *  v7------e6-------v6  |
+				 *  |    |           |   |
+				 *  |   v0------e0---|---v1
+				 * e11  /           e10  /
+				 *  |  e3            |  e1
+				 *  | /              | /    z y
+				 *  |/               |/     |/
+				 *  v3------e2-------v2     O--x
+				 */
+
 				// The edge table gives 12bits to tell us if the edge is cut
 				// by the isosurface
 
@@ -442,12 +459,12 @@ var marchingCubes = function(volume, dims, isovalue) {
 				}
 				// Edge 10: lerp between v2 and v6
 				if (edgeTable[index] & 1024) {
-					vertList[10] = lerpVerts([i, j + 1, k], [i, j + 1, k + 1],
+					vertList[10] = lerpVerts([i + 1, j + 1, k], [i + 1, j + 1, k + 1],
 						vertexValues[2], vertexValues[6], isovalue);
 				}
 				// Edge 11: lerp between v3 and v7
 				if (edgeTable[index] & 2048) {
-					vertList[11] = lerpVerts([i + 1, j + 1, k], [i + 1, j + 1, k + 1],
+					vertList[11] = lerpVerts([i, j + 1, k], [i, j + 1, k + 1],
 						vertexValues[3], vertexValues[7], isovalue);
 				}
 
