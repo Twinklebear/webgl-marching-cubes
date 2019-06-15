@@ -139,7 +139,6 @@ var renderLoop = function() {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, depthColorFbo);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	gl.enable(gl.DEPTH_TEST);
-	gl.cullFace(gl.BACK);
 
 	if (currentIsovalue != isovalue.value || newVolumeUpload) {
 		currentIsovalue = isovalue.value;
@@ -160,6 +159,7 @@ var renderLoop = function() {
 		gl.uniform3fv(surfaceShader.uniforms["eye_pos"], eye);
 		gl.uniformMatrix4fv(surfaceShader.uniforms["proj_view"], false, projView);
 
+		gl.disable(gl.CULL_FACE);
 		gl.bindVertexArray(surfaceVao);
 		gl.drawArrays(gl.TRIANGLES, 0, isosurfaceNumVerts);
 		gl.enable(gl.CULL_FACE);
