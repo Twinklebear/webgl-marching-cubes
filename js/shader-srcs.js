@@ -115,39 +115,55 @@ void main(void) {
 
 var isosurfaceVertShader =
 `#version 300 es
-#line 88
+#line 119
 layout(location=0) in vec3 pos;
 uniform mat4 proj_view;
 uniform vec3 eye_pos;
 uniform vec3 volume_scale;
 uniform ivec3 volume_dims;
 
+out vec3 vpos;
+
 void main(void) {
 	vec3 volume_translation = vec3(0.5) - volume_scale * 0.5;
 	// The isosurface vertices are in the volume grid space, so transform to [0, 1] first,
 	// then apply the volume transform to line up with the volume
-	gl_Position = proj_view * vec4(pos / vec3(volume_dims) * volume_scale + volume_translation, 1);
+	// TODO: This should still be fine for computing the normal right?
+	vpos = pos / vec3(volume_dims) * volume_scale + volume_translation;
+	gl_Position = proj_view * vec4(vpos, 1.f);
 }`;
 
 var isosurfaceFragShader =
 `#version 300 es
-#line 104
+#line 139
 precision highp int;
 precision highp float;
 uniform highp sampler2D colormap;
 uniform float isovalue;
+uniform vec3 eye_pos;
+
+in vec3 vpos;
 
 out vec4 color;
 
 void main(void) {
-	//color = texture(colormap, vec2(isovalue, 0.5));
-	color = vec4(0.5);
+	vec3 v = -normalize(vpos - eye_pos);
+	vec3 light_dir = normalize(v + vec3(0.5, 0.5, 0.5));
+	vec3 n = normalize(cross(dFdx(vpos), dFdy(vpos)));
+	//vec3 base_color = (n + 1.f) * 0.5f;
+	vec3 base_color = texture(colormap, vec2(isovalue, 0.5)).xyz;
+	vec3 h = normalize(v + light_dir);
+	// Just some Blinn-Phong shading
+	color.xyz = base_color * 0.4f;
+	color.xyz += 0.8 * clamp(dot(light_dir, n), 0.f, 1.f) * base_color;
+	color.xyz += 0.5 * pow(clamp(dot(n, h), 0.f, 1.f), 25.f);
+
 	color.a = 1.0;
 }`;
 
 var quadVertShader =
 `#version 300 es
-#line 119
+#line 162
 const vec4 pos[4] = vec4[4](
 	vec4(-1, 1, 0.5, 1),
 	vec4(-1, -1, 0.5, 1),
@@ -160,7 +176,7 @@ void main(void){
 
 var quadFragShader =
 `#version 300 es
-#line 132
+#line 175
 precision highp int;
 precision highp float;
 
