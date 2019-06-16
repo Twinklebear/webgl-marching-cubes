@@ -27,6 +27,7 @@ var colormapTex = null;
 var volumeData = null;
 
 var isovalue = null;
+var showVolume = null;
 var currentIsovalue = -1.0;
 var surfaceShader = null;
 var surfaceVao = null;
@@ -166,21 +167,23 @@ var renderLoop = function() {
 	}
 
 	// Render the volume on top of the isosurface
-	gl.disable(gl.DEPTH_TEST);
-	gl.cullFace(gl.FRONT);
-	gl.bindFramebuffer(gl.FRAMEBUFFER, colorFbo);
-	gl.bindVertexArray(volumeVao);
-	volumeShader.use();
-	gl.uniform3iv(volumeShader.uniforms["volume_dims"], volDims);
-	gl.uniform3fv(volumeShader.uniforms["volume_scale"], volScale);
-	gl.uniform3fv(volumeShader.uniforms["eye_pos"], eye);
-	gl.uniform1f(volumeShader.uniforms["dt_scale"], samplingRate);
-	gl.uniformMatrix4fv(volumeShader.uniforms["proj_view"], false, projView);
-	gl.uniformMatrix4fv(volumeShader.uniforms["inv_proj"], false, invProj);
-	gl.uniformMatrix4fv(volumeShader.uniforms["inv_view"], false, invView);
+	if (showVolume.checked) {
+		gl.disable(gl.DEPTH_TEST);
+		gl.cullFace(gl.FRONT);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, colorFbo);
+		gl.bindVertexArray(volumeVao);
+		volumeShader.use();
+		gl.uniform3iv(volumeShader.uniforms["volume_dims"], volDims);
+		gl.uniform3fv(volumeShader.uniforms["volume_scale"], volScale);
+		gl.uniform3fv(volumeShader.uniforms["eye_pos"], eye);
+		gl.uniform1f(volumeShader.uniforms["dt_scale"], samplingRate);
+		gl.uniformMatrix4fv(volumeShader.uniforms["proj_view"], false, projView);
+		gl.uniformMatrix4fv(volumeShader.uniforms["inv_proj"], false, invProj);
+		gl.uniformMatrix4fv(volumeShader.uniforms["inv_view"], false, invView);
 
-	gl.bindVertexArray(volumeVao);
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, cubeStrip.length / 3);
+		gl.bindVertexArray(volumeVao);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, cubeStrip.length / 3);
+	}
 
 	// Perform final blit to the actual framebuffer, as we can't do a
 	// blit framebuffer if the image is multisampled
@@ -261,6 +264,8 @@ window.onload = function(){
 	fillcolormapSelector();
 
 	isovalue = document.getElementById("isovalue");
+	showVolume = document.getElementById("showVolume");
+	showVolume.checked = true;
 
 	canvas = document.getElementById("glcanvas");
 	gl = canvas.getContext("webgl2");
