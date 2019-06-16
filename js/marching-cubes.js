@@ -357,9 +357,9 @@ var marchingCubes = function(volume, dims, isovalue) {
 
 					// TODO NOTE: The vertex positions need to be placed on the dual grid,
 					// since that's where the isosurface is computed and defined.
-					triangles.push(v[0] + i);
-					triangles.push(v[1] + j);
-					triangles.push(v[2] + k);
+					triangles.push(v[0] + i + 0.5);
+					triangles.push(v[1] + j + 0.5);
+					triangles.push(v[2] + k + 0.5);
 				}
 			}
 		}
