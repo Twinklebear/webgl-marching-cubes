@@ -85,31 +85,51 @@ void main(void) {
 	}
 	t_hit.x = max(t_hit.x, 0.0);
 
+	vec3 dt_vec = 1.0 / (vec3(volume_dims) * abs(ray_dir));
+	float dt = dt_scale * min(dt_vec.x, min(dt_vec.y, dt_vec.z));
+	float dt_correction = dt_scale;
+	float offset = wang_hash(int(gl_FragCoord.x + float(canvas_dims.x) * gl_FragCoord.y));
+
 	// Composite with the rendered geometry
 	float z = linearize(texelFetch(depth, ivec2(gl_FragCoord), 0).x);
 	if (z < 1.0) {
 		vec3 volume_translation = vec3(0.5) - volume_scale * 0.5;
 		vec3 geom_pos = (inv_view * compute_view_pos(z)).xyz;
 		geom_pos = (geom_pos - volume_translation) / volume_scale;
-		t_hit.y = min(length(geom_pos - transformed_eye), t_hit.y);
+		float geom_t = length(geom_pos - transformed_eye);
+
+		// We want to adjust the sampling rate to still take a reasonable
+		// number of samples in the volume up to the surface
+		float samples = 1.f / dt;
+		float newdt = (geom_t - t_hit.x) / samples;
+		dt_correction = dt_scale * newdt / dt;
+		dt = newdt;
+		t_hit.y = geom_t;
 	}
 
-	vec3 dt_vec = 1.0 / (vec3(volume_dims) * abs(ray_dir));
-	float dt = dt_scale * min(dt_vec.x, min(dt_vec.y, dt_vec.z));
-	float offset = wang_hash(int(gl_FragCoord.x + float(canvas_dims.x) * gl_FragCoord.y));
 	vec3 p = transformed_eye + (t_hit.x + offset * dt) * ray_dir;
 	float t;
-	for (t = t_hit.x; t <= t_hit.y; t += dt) {
+	for (t = t_hit.x; t < t_hit.y; t += dt) {
 		float val = texture(volume, p).r;
 		vec4 val_color = vec4(texture(colormap, vec2(val, 0.5)).rgb, val);
 		// Opacity correction
-		val_color.a = 1.0 - pow(1.0 - val_color.a, dt_scale);
+		val_color.a = 1.0 - pow(1.0 - val_color.a, dt_correction);
 		color.rgb += (1.0 - color.a) * val_color.a * val_color.rgb;
 		color.a += (1.0 - color.a) * val_color.a;
 		if (color.a >= 0.99) {
 			break;
 		}
 		p += ray_dir * dt;
+	}
+	// If we have the surface, take a final sample at the surface point
+	if (z < 1.f) {
+		p = transformed_eye + t_hit.y * ray_dir;
+		float val = texture(volume, p).r;
+		vec4 val_color = vec4(texture(colormap, vec2(val, 0.5)).rgb, val);
+		// Opacity correction
+		val_color.a = 1.0 - pow(1.0 - val_color.a, (t_hit.y - t) * dt_scale);
+		color.rgb += (1.0 - color.a) * val_color.a * val_color.rgb;
+		color.a += (1.0 - color.a) * val_color.a;
 	}
 }`;
 
@@ -148,15 +168,16 @@ out vec4 color;
 
 void main(void) {
 	vec3 v = -normalize(vpos - eye_pos);
-	vec3 light_dir = normalize(v + vec3(0.5, 0.5, 0.5));
+	//vec3 light_dir = normalize(v + vec3(0.5, 0.5, 0.5));
+	vec3 light_dir = v;
 	vec3 n = normalize(cross(dFdx(vpos), dFdy(vpos)));
 	//vec3 base_color = (n + 1.f) * 0.5f;
 	vec3 base_color = texture(colormap, vec2(isovalue, 0.5)).xyz;
 	vec3 h = normalize(v + light_dir);
 	// Just some Blinn-Phong shading
-	color.xyz = base_color * 0.4f;
-	color.xyz += 0.8 * clamp(dot(light_dir, n), 0.f, 1.f) * base_color;
-	color.xyz += 0.5 * pow(clamp(dot(n, h), 0.f, 1.f), 25.f);
+	color.xyz = base_color * 0.2f;
+	color.xyz += 0.6 * clamp(dot(light_dir, n), 0.f, 1.f) * base_color;
+	color.xyz += 0.4 * pow(clamp(dot(n, h), 0.f, 1.f), 25.f);
 
 	color.a = 1.0;
 }`;
