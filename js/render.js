@@ -1,3 +1,5 @@
+import init, {marching_cubes} from "../pkg/marching_cubes.js";
+
 var cubeStrip = [
 	1, 1, 0,
 	0, 1, 0,
@@ -28,6 +30,7 @@ var volumeData = null;
 
 var isovalue = null;
 var showVolume = null;
+var useWebASM = null;
 var currentIsovalue = -1.0;
 var surfaceShader = null;
 var surfaceVao = null;
@@ -106,9 +109,12 @@ var loadVolume = function(file, onload) {
 	req.onload = function(evt) {
 		loadingProgressText.innerHTML = "Loaded Volume";
 		loadingProgressBar.setAttribute("style", "width: 100%");
-		var dataBuffer = req.response;
-		if (dataBuffer) {
-			dataBuffer = new Uint8Array(dataBuffer);
+		var respBuf = req.response;
+		if (respBuf) {
+            // TODO: We then need to copy the buffer into webasm memory space,
+            // and use that buffer for the rest of the code, instead of copying it
+            // in/out every call
+			var dataBuffer = new Uint8Array(respBuf);
 			onload(file, dataBuffer);
 		} else {
 			alert("Unable to load buffer properly from volume?");
@@ -143,7 +149,21 @@ var renderLoop = function() {
 
 	if (currentIsovalue != isovalue.value || newVolumeUpload) {
 		currentIsovalue = isovalue.value;
-		var triangles = marchingCubes(volumeData, volDims, currentIsovalue);
+
+        var triangles;
+        if (useWebASM.checked) {
+            var t0 = performance.now();
+            // TODO: We want to put the volume data in Rust's memory space
+            triangles = marching_cubes(volumeData, volDims[0], volDims[1], volDims[2], currentIsovalue);
+            var t1 = performance.now();
+            console.log("Rust took " + (t1 - t0) + "ms");
+        } else {
+            var t0 = performance.now();
+            triangles = marchingCubes(volumeData, volDims, currentIsovalue);
+            var t1 = performance.now();
+            console.log("JS took " + (t1 - t0) + "ms");
+            console.log("JS num verts: " + triangles.length / 3);
+        }
 		isosurfaceNumVerts = triangles.length / 3;
 		gl.bindBuffer(gl.ARRAY_BUFFER, surfaceVbo);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangles), gl.DYNAMIC_DRAW);
@@ -152,7 +172,7 @@ var renderLoop = function() {
 	var startTime = new Date();
 	// Render the isosurface if we have  one
 	if (isosurfaceNumVerts > 0) {
-		surfaceShader.use()
+		surfaceShader.use(gl)
 		gl.disable(gl.CULL_FACE);
 		gl.uniform1f(surfaceShader.uniforms["isovalue"], currentIsovalue);
 		gl.uniform3iv(surfaceShader.uniforms["volume_dims"], volDims);
@@ -172,7 +192,7 @@ var renderLoop = function() {
 		gl.cullFace(gl.FRONT);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, colorFbo);
 		gl.bindVertexArray(volumeVao);
-		volumeShader.use();
+		volumeShader.use(gl);
 		gl.uniform3iv(volumeShader.uniforms["volume_dims"], volDims);
 		gl.uniform3fv(volumeShader.uniforms["volume_scale"], volScale);
 		gl.uniform3fv(volumeShader.uniforms["eye_pos"], eye);
@@ -191,7 +211,7 @@ var renderLoop = function() {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	gl.disable(gl.BLEND);
 	gl.disable(gl.CULL_FACE);
-	blitImageShader.use();
+	blitImageShader.use(gl);
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 	gl.enable(gl.CULL_FACE);
 	gl.enable(gl.BLEND);
@@ -259,13 +279,16 @@ var selectColormap = function() {
 	colormapImage.src = colormaps[selection];
 }
 
-window.onload = function(){
+var run = function(){
 	fillVolumeSelector();
 	fillcolormapSelector();
 
 	isovalue = document.getElementById("isovalue");
 	showVolume = document.getElementById("showVolume");
 	showVolume.checked = true;
+
+	useWebASM = document.getElementById("useWebASM");
+	useWebASM.checked = true;
 
 	canvas = document.getElementById("glcanvas");
 	gl = canvas.getContext("webgl2");
@@ -311,19 +334,13 @@ window.onload = function(){
 	gl.enableVertexAttribArray(0);
 	gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
-	volumeShader = new Shader(vertShader, fragShader);
-	volumeShader.use();
+	volumeShader = new Shader(gl, vertShader, fragShader);
+	volumeShader.use(gl);
 	gl.uniform1i(volumeShader.uniforms["volume"], 0);
 	gl.uniform1i(volumeShader.uniforms["colormap"], 1);
 	gl.uniform1i(volumeShader.uniforms["depth"], 4);
 	gl.uniform1f(volumeShader.uniforms["dt_scale"], 1.0);
 	gl.uniform2iv(volumeShader.uniforms["canvas_dims"], [WIDTH, HEIGHT]);
-
-	var testsurf = [
-		0, 0, 32,
-		64, 0, 32,
-		0, 64, 32
-	];
 
 	surfaceVao = gl.createVertexArray();
 	surfaceVbo = gl.createBuffer();
@@ -332,12 +349,12 @@ window.onload = function(){
 	gl.enableVertexAttribArray(0);
 	gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
-	surfaceShader = new Shader(isosurfaceVertShader, isosurfaceFragShader);
-	surfaceShader.use();
+	surfaceShader = new Shader(gl, isosurfaceVertShader, isosurfaceFragShader);
+	surfaceShader.use(gl);
 	gl.uniform1i(surfaceShader.uniforms["colormap"], 1);
 
-	blitImageShader = new Shader(quadVertShader, quadFragShader);
-	blitImageShader.use();
+	blitImageShader = new Shader(gl, quadVertShader, quadFragShader);
+	blitImageShader.use(gl);
 	// Final colors will be on texture unit 3
 	gl.uniform1i(blitImageShader.uniforms["colors"], 3);
 
@@ -413,21 +430,29 @@ window.onload = function(){
 
 var fillVolumeSelector = function() {
 	var selector = document.getElementById("volumeList");
-	for (v in volumes) {
+	for (var v in volumes) {
 		var opt = document.createElement("option");
 		opt.value = v;
 		opt.innerHTML = v;
 		selector.appendChild(opt);
 	}
+    selector.addEventListener("change", selectVolume);
 }
 
 var fillcolormapSelector = function() {
 	var selector = document.getElementById("colormapList");
-	for (p in colormaps) {
+	for (var p in colormaps) {
 		var opt = document.createElement("option");
 		opt.value = p;
 		opt.innerHTML = p;
 		selector.appendChild(opt);
 	}
+    selector.addEventListener("change", selectColormap);
+}
+
+window.onload = function() {
+    init("pkg/marching_cubes_bg.wasm").then(() => {
+        run();
+    });
 }
 

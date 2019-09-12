@@ -18,10 +18,10 @@
 			</div>
 			<div class="mx-auto col-12 col-lg-8 row">
 				<div class="col-12 col-lg-6 mb-lg-0 mb-2">
-					Volume: <select id="volumeList" onchange="selectVolume()"></select>
+					Volume: <select id="volumeList"></select>
 				</div>
 				<div class="col-12 col-lg-6 mb-lg-0 mb-2">
-					Colormap: <select id="colormapList" onchange="selectColormap()"></select>
+					Colormap: <select id="colormapList"></select>
 				</div>
 				<div class="col-12 mb-lg-2 mb-2 mt-2">
 					<label for="isovalue">Isovalue</label>
@@ -30,6 +30,9 @@
 
 					<input type="checkbox" class="form-check-input" id="showVolume">
 					<label class="form-check-label" for="showVolume">Show Volume</label>
+                    <br />
+					<input type="checkbox" class="form-check-input" id="useWebASM">
+					<label class="form-check-label" for="useWebASM">Use WebASM</label>
 				</div>
 				<div class="col-12 mt-lg-2 mt-0">
 					<p>Mouse Controls: Left-click + drag to rotate, scroll to zoom, right-click + drag to pan.
@@ -48,11 +51,11 @@
 			</div>
 		</div>
 	</div>
-	<script src="js/gl-matrix-min.js"></script>
+    <script src="js/gl-matrix-min.js"></script>
 	<script src="js/webgl-util.js"></script>
 	<script src="js/shader-srcs.js"></script>
 	<script src="js/marching-cubes.js"></script>
-	<script src="js/render.js"></script>
+    <script type="module" src="js/render.js"></script>
 </body>
 </html>
 

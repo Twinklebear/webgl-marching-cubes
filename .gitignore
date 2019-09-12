@@ -1,3 +1,8 @@
 *.swp
 *.raw
+/target
+**/*.rs.bk
+Cargo.lock
+pkg/
+*.swp
 

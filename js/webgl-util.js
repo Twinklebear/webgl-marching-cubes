@@ -283,9 +283,9 @@ var pointDist = function(a, b) {
 	return Math.sqrt(Math.pow(v[0], 2.0) + Math.pow(v[1], 2.0));
 }
 
-var Shader = function(vertexSrc, fragmentSrc) {
+var Shader = function(gl, vertexSrc, fragmentSrc) {
 	var self = this;
-	this.program = compileShader(vertexSrc, fragmentSrc);
+	this.program = compileShader(gl, vertexSrc, fragmentSrc);
 
 	var regexUniform = /uniform[^;]+[ ](\w+);/g
 	var matchUniformName = /uniform[^;]+[ ](\w+);/
@@ -313,14 +313,14 @@ var Shader = function(vertexSrc, fragmentSrc) {
 	}
 }
 
-Shader.prototype.use = function() {
+Shader.prototype.use = function(gl) {
 	gl.useProgram(this.program);
 }
 
 // Compile and link the shaders vert and frag. vert and frag should contain
 // the shader source code for the vertex and fragment shaders respectively
 // Returns the compiled and linked program, or null if compilation or linking failed
-var compileShader = function(vert, frag){
+var compileShader = function(gl, vert, frag){
 	var vs = gl.createShader(gl.VERTEX_SHADER);
 	gl.shaderSource(vs, vert);
 	gl.compileShader(vs);
@@ -351,7 +351,7 @@ var compileShader = function(vert, frag){
 	return program;
 }
 
-var getGLExtension = function(ext) {
+var getGLExtension = function(gl, ext) {
 	if (!gl.getExtension(ext)) {
 		alert("Missing " + ext + " WebGL extension");
 		return false;
