@@ -20,6 +20,7 @@ var cubeStrip = [
 var canvas = null;
 var gl = null;
 var marchingCubes = null;
+var isosurfaceInfo = null;
 
 var volumeShader = null;
 var volumeVao = null;
@@ -152,18 +153,23 @@ var renderLoop = function() {
 		currentIsovalue = isovalue.value;
 
         var triangles;
+        var computeTime;
         if (useWebASM.checked) {
             var t0 = performance.now();
             triangles = marchingCubes.marching_cubes(parseFloat(currentIsovalue));
             var t1 = performance.now();
-            console.log("Rust took " + (t1 - t0) + "ms");
+            computeTime = t1 - t0;
         } else {
             var t0 = performance.now();
             triangles = marchingCubesJS(volumeData, volDims, currentIsovalue);
             var t1 = performance.now();
-            console.log("JS took " + (t1 - t0) + "ms");
+            computeTime = t1 - t0;
         }
 		isosurfaceNumVerts = triangles.length / 3;
+        isosurfaceInfo.innerHTML = "Isosurface contains " + isosurfaceNumVerts / 3 +
+            " triangles, computed in " + computeTime + "ms";
+
+
 		gl.bindBuffer(gl.ARRAY_BUFFER, surfaceVbo);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangles), gl.DYNAMIC_DRAW);
 	}
@@ -290,6 +296,8 @@ var run = function(){
 
 	useWebASM = document.getElementById("useWebASM");
 	useWebASM.checked = true;
+
+    isosurfaceInfo = document.getElementById("isosurfaceInfo");
 
 	canvas = document.getElementById("glcanvas");
 	gl = canvas.getContext("webgl2");

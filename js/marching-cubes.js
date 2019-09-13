@@ -295,19 +295,18 @@ var computeVertexValues = function(volume, dims, cell, values) {
 		var voxel = ((cell[2] + v[2]) * dims[1] + cell[1] + v[1]) * dims[0] + cell[0] + v[0];
 		values[i] = volume[voxel] / 255.0;
 	};
-	return values;
 }
 
-var lerpVerts = function(va, vb, fa, fb, isoval) {
+var lerpVerts = function(va, vb, fa, fb, isoval, vert) {
 	var t = 0;
 	if (Math.abs(fa - fb) < 0.0001) {
 		t = 0.0;
 	} else {
 		t = (isoval - fa) / (fb - fa);
 	}
-	return [va[0] + t * (vb[0] - va[0]),
-		va[1] + t * (vb[1] - va[1]),
-		va[2] + t * (vb[2] - va[2])]
+	vert[0] = va[0] + t * (vb[0] - va[0]);
+    vert[1] = va[1] + t * (vb[1] - va[1]);
+	vert[2] = va[2] + t * (vb[2] - va[2]);
 }
 
 // Run the Marching Cubes algorithm on the volume to compute
@@ -317,6 +316,7 @@ var lerpVerts = function(va, vb, fa, fb, isoval) {
 var marchingCubesJS = function(volume, dims, isovalue) {
 	var triangles = [];
 	var vertexValues = [0, 0, 0, 0, 0, 0, 0, 0];
+    var vert = [0, 0, 0];
 	for (var k = 0; k < dims[2] - 1; ++k) {
 		for (var j = 0; j < dims[1] - 1; ++j) {
 			for (var i = 0; i < dims[0] - 1; ++i) {
@@ -348,18 +348,17 @@ var marchingCubesJS = function(volume, dims, isovalue) {
 				// The triangle table gives us the mapping from index to actual
 				// triangles to return for this configuration
 				for (var t = 0; triTable[index][t] != -1; ++t) {
-					// TODO Asymptotic Decider - or is that already encoded into the tables?
 					var v0 = edge_vertices[triTable[index][t]][0];
 					var v1 = edge_vertices[triTable[index][t]][1];
 
-					var v = lerpVerts(index_to_vertex[v0], index_to_vertex[v1],
-						vertexValues[v0], vertexValues[v1], isovalue);
+                    lerpVerts(index_to_vertex[v0], index_to_vertex[v1],
+						vertexValues[v0], vertexValues[v1], isovalue, vert);
 
-					// TODO NOTE: The vertex positions need to be placed on the dual grid,
+					// Note: The vertex positions need to be placed on the dual grid,
 					// since that's where the isosurface is computed and defined.
-					triangles.push(v[0] + i + 0.5);
-					triangles.push(v[1] + j + 0.5);
-					triangles.push(v[2] + k + 0.5);
+					triangles.push(vert[0] + i + 0.5);
+					triangles.push(vert[1] + j + 0.5);
+					triangles.push(vert[2] + k + 0.5);
 				}
 			}
 		}
