@@ -1,4 +1,4 @@
-import init, {marching_cubes} from "../pkg/marching_cubes.js";
+import init, {MarchingCubes} from "../pkg/marching_cubes.js";
 
 var cubeStrip = [
 	1, 1, 0,
@@ -19,6 +19,7 @@ var cubeStrip = [
 
 var canvas = null;
 var gl = null;
+var marchingCubes = null;
 
 var volumeShader = null;
 var volumeVao = null;
@@ -153,16 +154,14 @@ var renderLoop = function() {
         var triangles;
         if (useWebASM.checked) {
             var t0 = performance.now();
-            // TODO: We want to put the volume data in Rust's memory space
-            triangles = marching_cubes(volumeData, volDims[0], volDims[1], volDims[2], currentIsovalue);
+            triangles = marchingCubes.marching_cubes(parseFloat(currentIsovalue));
             var t1 = performance.now();
             console.log("Rust took " + (t1 - t0) + "ms");
         } else {
             var t0 = performance.now();
-            triangles = marchingCubes(volumeData, volDims, currentIsovalue);
+            triangles = marchingCubesJS(volumeData, volDims, currentIsovalue);
             var t1 = performance.now();
             console.log("JS took " + (t1 - t0) + "ms");
-            console.log("JS num verts: " + triangles.length / 3);
         }
 		isosurfaceNumVerts = triangles.length / 3;
 		gl.bindBuffer(gl.ARRAY_BUFFER, surfaceVbo);
@@ -255,6 +254,8 @@ var selectVolume = function() {
 		var longestAxis = Math.max(volDims[0], Math.max(volDims[1], volDims[2]));
 		volScale = [volDims[0] / longestAxis, volDims[1] / longestAxis,
 			volDims[2] / longestAxis];
+
+        marchingCubes.set_volume(dataBuffer, volDims[0], volDims[1], volDims[2]);
 
 		volumeData = dataBuffer;
 		newVolumeUpload = true;
@@ -452,6 +453,7 @@ var fillcolormapSelector = function() {
 
 window.onload = function() {
     init("pkg/marching_cubes_bg.wasm").then(() => {
+        marchingCubes = MarchingCubes.new();
         run();
     });
 }

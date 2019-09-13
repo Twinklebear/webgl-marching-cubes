@@ -13,7 +13,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 cfg-if = "0.1"
 wasm-bindgen = "0.2"
-web-sys = { version="0.3", features=["Window", "Performance"] }
+js-sys = "0.3"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
@@ -23,4 +23,8 @@ console_error_panic_hook = { version = "0.1", optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.2"
+
+[profile.release]
+lto = true
+opt-level = 3
 

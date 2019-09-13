@@ -314,7 +314,7 @@ var lerpVerts = function(va, vb, fa, fb, isoval) {
 // the isosurface at the desired value. The volume is assumed
 // to be a Uint8Array, with one uint8 per-voxel.
 // Dims should give the [x, y, z] dimensions of the volume
-var marchingCubes = function(volume, dims, isovalue) {
+var marchingCubesJS = function(volume, dims, isovalue) {
 	var triangles = [];
 	var vertexValues = [0, 0, 0, 0, 0, 0, 0, 0];
 	for (var k = 0; k < dims[2] - 1; ++k) {
