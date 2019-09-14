@@ -169,9 +169,8 @@ var renderLoop = function() {
         isosurfaceInfo.innerHTML = "Isosurface contains " + isosurfaceNumVerts / 3 +
             " triangles, computed in " + computeTime + "ms";
 
-
 		gl.bindBuffer(gl.ARRAY_BUFFER, surfaceVbo);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangles), gl.DYNAMIC_DRAW);
+		gl.bufferData(gl.ARRAY_BUFFER, triangles, gl.DYNAMIC_DRAW);
 	}
 
 	var startTime = new Date();

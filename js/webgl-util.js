@@ -154,6 +154,82 @@ Frustum.prototype.containsBox = function(box) {
 }
 
 
+var Shader = function(gl, vertexSrc, fragmentSrc) {
+	var self = this;
+	this.program = compileShader(gl, vertexSrc, fragmentSrc);
+
+	var regexUniform = /uniform[^;]+[ ](\w+);/g
+	var matchUniformName = /uniform[^;]+[ ](\w+);/
+
+	this.uniforms = {};
+
+	var vertexUnifs = vertexSrc.match(regexUniform);
+	var fragUnifs = fragmentSrc.match(regexUniform);
+
+	if (vertexUnifs) {
+		vertexUnifs.forEach(function(unif) {
+			var m = unif.match(matchUniformName);
+			self.uniforms[m[1]] = -1;
+		});
+	}
+	if (fragUnifs) {
+		fragUnifs.forEach(function(unif) {
+			var m = unif.match(matchUniformName);
+			self.uniforms[m[1]] = -1;
+		});
+	}
+
+	for (var unif in this.uniforms) {
+		this.uniforms[unif] = gl.getUniformLocation(this.program, unif);
+	}
+}
+
+Shader.prototype.use = function(gl) {
+	gl.useProgram(this.program);
+}
+
+// Compile and link the shaders vert and frag. vert and frag should contain
+// the shader source code for the vertex and fragment shaders respectively
+// Returns the compiled and linked program, or null if compilation or linking failed
+var compileShader = function(gl, vert, frag){
+	var vs = gl.createShader(gl.VERTEX_SHADER);
+	gl.shaderSource(vs, vert);
+	gl.compileShader(vs);
+	if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)){
+		alert("Vertex shader failed to compile, see console for log");
+		console.log(gl.getShaderInfoLog(vs));
+		return null;
+	}
+
+	var fs = gl.createShader(gl.FRAGMENT_SHADER);
+	gl.shaderSource(fs, frag);
+	gl.compileShader(fs);
+	if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)){
+		alert("Fragment shader failed to compile, see console for log");
+		console.log(gl.getShaderInfoLog(fs));
+		return null;
+	}
+
+	var program = gl.createProgram();
+	gl.attachShader(program, vs);
+	gl.attachShader(program, fs);
+	gl.linkProgram(program);
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)){
+		alert("Shader failed to link, see console for log");
+		console.log(gl.getProgramInfoLog(program));
+		return null;
+	}
+	return program;
+}
+
+var getGLExtension = function(ext) {
+	if (!gl.getExtension(ext)) {
+		alert("Missing " + ext + " WebGL extension");
+		return false;
+	}
+	return true;
+}
+
 /* The arcball camera will be placed at the position 'eye', rotating
  * around the point 'center', with the up vector 'up'. 'screenDims'
  * should be the dimensions of the canvas or region taking mouse input
@@ -283,94 +359,32 @@ var pointDist = function(a, b) {
 	return Math.sqrt(Math.pow(v[0], 2.0) + Math.pow(v[1], 2.0));
 }
 
-var Shader = function(gl, vertexSrc, fragmentSrc) {
-	var self = this;
-	this.program = compileShader(gl, vertexSrc, fragmentSrc);
-
-	var regexUniform = /uniform[^;]+[ ](\w+);/g
-	var matchUniformName = /uniform[^;]+[ ](\w+);/
-
-	this.uniforms = {};
-
-	var vertexUnifs = vertexSrc.match(regexUniform);
-	var fragUnifs = fragmentSrc.match(regexUniform);
-
-	if (vertexUnifs) {
-		vertexUnifs.forEach(function(unif) {
-			var m = unif.match(matchUniformName);
-			self.uniforms[m[1]] = -1;
-		});
-	}
-	if (fragUnifs) {
-		fragUnifs.forEach(function(unif) {
-			var m = unif.match(matchUniformName);
-			self.uniforms[m[1]] = -1;
-		});
-	}
-
-	for (var unif in this.uniforms) {
-		this.uniforms[unif] = gl.getUniformLocation(this.program, unif);
-	}
-}
-
-Shader.prototype.use = function(gl) {
-	gl.useProgram(this.program);
-}
-
-// Compile and link the shaders vert and frag. vert and frag should contain
-// the shader source code for the vertex and fragment shaders respectively
-// Returns the compiled and linked program, or null if compilation or linking failed
-var compileShader = function(gl, vert, frag){
-	var vs = gl.createShader(gl.VERTEX_SHADER);
-	gl.shaderSource(vs, vert);
-	gl.compileShader(vs);
-	if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)){
-		alert("Vertex shader failed to compile, see console for log");
-		console.log(gl.getShaderInfoLog(vs));
-		return null;
-	}
-
-	var fs = gl.createShader(gl.FRAGMENT_SHADER);
-	gl.shaderSource(fs, frag);
-	gl.compileShader(fs);
-	if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)){
-		alert("Fragment shader failed to compile, see console for log");
-		console.log(gl.getShaderInfoLog(fs));
-		return null;
-	}
-
-	var program = gl.createProgram();
-	gl.attachShader(program, vs);
-	gl.attachShader(program, fs);
-	gl.linkProgram(program);
-	if (!gl.getProgramParameter(program, gl.LINK_STATUS)){
-		alert("Shader failed to link, see console for log");
-		console.log(gl.getProgramInfoLog(program));
-		return null;
-	}
-	return program;
-}
-
-var getGLExtension = function(gl, ext) {
-	if (!gl.getExtension(ext)) {
-		alert("Missing " + ext + " WebGL extension");
-		return false;
-	}
-	return true;
-}
-
 var Buffer = function(capacity, dtype) {
 	this.len = 0;
 	this.capacity = capacity;
 	if (dtype == "uint8") {
 		this.buffer = new Uint8Array(capacity);
+	} else if (dtype == "int8") {
+		this.buffer = new Int8Array(capacity);
 	} else if (dtype == "uint16") {
 		this.buffer = new Uint16Array(capacity);
-	}
+	} else if (dtype == "int16") {
+		this.buffer = new Int16Array(capacity);
+	} else if (dtype == "uint32") {
+		this.buffer = new Uint32Array(capacity);
+	} else if (dtype == "int32") {
+		this.buffer = new Int32Array(capacity);
+	} else if (dtype == "float32") {
+		this.buffer = new Float32Array(capacity);
+	} else if (dtype == "float64") {
+		this.buffer = new Float64Array(capacity);
+    } else {
+        console.log("ERROR: unsupported type " + dtype);
+    }
 }
 
 Buffer.prototype.append = function(buf) {
-	if (this.len + buf.byteLength >= this.capacity) {
+	if (this.len + buf.length >= this.capacity) {
 		var newCap = Math.floor(this.capacity * 1.5);
 		var tmp = new (this.buffer.constructor)(newCap);
 		tmp.set(this.buffer);
@@ -382,8 +396,16 @@ Buffer.prototype.append = function(buf) {
 	this.len += buf.length;
 }
 
-Buffer.prototype.clear = function(buf) {
+Buffer.prototype.clear = function() {
 	this.len = 0;
+}
+
+Buffer.prototype.stride = function() {
+    return this.buffer.BYTES_PER_ELEMENT;
+}
+
+Buffer.prototype.view = function(offset, length) {
+    return new (this.buffer.constructor)(this.buffer.buffer, offset, length);
 }
 
 // Various utilities that don't really fit anywhere else
