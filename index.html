@@ -58,8 +58,8 @@
                     An isosurface is a surface
                     which represents points in the 3D data which all have the same value (e.g., pressure, temperature).
                     Try changing the slider to change the selected isovalue! The isosurface extraction code
-                    is implemented in Rust and compiled to WebAssembly to accelerate extraction of the surface. Compared to
-                    the pure Javascript version, the WebASM version is 10-20x faster! You can run the Javascript version
+                    is implemented in Rust and compiled to WebAssembly to accelerate extraction of the surface. Depending on your browser,
+                    when compared to the pure Javascript version the WebASM version is 10-50x faster! You can run the Javascript version
                     by unchecking the "Use WebASM" box. The surface is rendered as a triangle mesh and combined with the
                     volume during the volume raycasting step, in a manner roughly similar to shadow mapping.
 					<a href="https://github.com/Twinklebear/webgl-marching-cubes">

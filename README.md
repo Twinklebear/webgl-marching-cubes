@@ -1,6 +1,13 @@
 # WebGL Marching Cubes
 
-An example of marching cubes in WebGL, using Rust + WebASM to compute the isosurface.
+This is a WebGL + WebASM implementation of the classic [Marching Cubes](https://en.wikipedia.org/wiki/Marching_cubes)
+algorithm for extracting [isosurfaces](https://en.wikipedia.org/wiki/Isosurface) from 3D volume data.
+An isosurface is a surface which represents points in the 3D data which all have the same value
+(e.g., pressure, temperature). The isosurface extraction code is implemented in Rust and compiled
+to WebAssembly to accelerate extraction of the surface. Depending on your browser,
+when compared to the pure Javascript version the WebASM version is 10-50x faster!
+The surface is rendered as a triangle mesh and combined with the
+volume during the volume raycasting step, in a manner roughly similar to shadow mapping.
 [Try it out online!](https://www.willusher.io/webgl-marching-cubes/)
 
 To compile the WebAssembly version you'll need [Rust](https://www.rust-lang.org/) and wasm-pack.
