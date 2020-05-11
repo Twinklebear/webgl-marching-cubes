@@ -204,8 +204,18 @@ precision highp float;
 uniform sampler2D colors;
 out vec4 color;
 
+float linear_to_srgb(float x) {
+	if (x <= 0.0031308f) {
+		return 12.92f * x;
+	}
+	return 1.055f * pow(x, 1.f / 2.4f) - 0.055f;
+}
+
 void main(void){ 
 	ivec2 uv = ivec2(gl_FragCoord.xy);
 	color = texelFetch(colors, uv, 0);
+    color.r = linear_to_srgb(color.r);
+    color.g = linear_to_srgb(color.g);
+    color.b = linear_to_srgb(color.b);
 }`;
 
