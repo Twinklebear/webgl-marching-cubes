@@ -156,18 +156,18 @@ var renderLoop = function() {
         var computeTime;
         if (useWebASM.checked) {
             var t0 = performance.now();
-            triangles = marchingCubes.marching_cubes(parseFloat(currentIsovalue));
+            triangles = marchingCubes.marching_cubes(parseFloat(currentIsovalue / 255.0));
             var t1 = performance.now();
             computeTime = t1 - t0;
         } else {
             var t0 = performance.now();
-            triangles = marchingCubesJS(volumeData, volDims, currentIsovalue);
+            triangles = marchingCubesJS(volumeData, volDims, currentIsovalue / 255.0);
             var t1 = performance.now();
             computeTime = t1 - t0;
         }
 		isosurfaceNumVerts = triangles.length / 3;
-        isosurfaceInfo.innerHTML = "Isosurface contains " + isosurfaceNumVerts / 3 +
-            " triangles, computed in " + computeTime + "ms";
+        isosurfaceInfo.innerHTML = `Isosurface at ${currentIsovalue} contains ${isosurfaceNumVerts / 3} ` +
+            `triangles, computed in ${computeTime}ms`;
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, surfaceVbo);
 		gl.bufferData(gl.ARRAY_BUFFER, triangles, gl.DYNAMIC_DRAW);
@@ -178,7 +178,7 @@ var renderLoop = function() {
 	if (isosurfaceNumVerts > 0) {
 		surfaceShader.use(gl)
 		gl.disable(gl.CULL_FACE);
-		gl.uniform1f(surfaceShader.uniforms["isovalue"], currentIsovalue);
+		gl.uniform1f(surfaceShader.uniforms["isovalue"], currentIsovalue / 255.0);
 		gl.uniform3iv(surfaceShader.uniforms["volume_dims"], volDims);
 		gl.uniform3fv(surfaceShader.uniforms["volume_scale"], volScale);
 		gl.uniform3fv(surfaceShader.uniforms["eye_pos"], eye);
