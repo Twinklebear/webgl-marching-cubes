@@ -85,11 +85,15 @@ var colormaps = {
 	"Samsel Linear YGB 1211G": "colormaps/samsel-linear-ygb-1211g.png",
 };
 
-var loadVolume = function(file, onload) {
+var loadVolume = function(selection, onload) {
+    var file = volumes[selection];
 	var m = file.match(fileRegex);
 	var volDims = [parseInt(m[2]), parseInt(m[3]), parseInt(m[4])];
 	
-	var url = "https://www.dl.dropboxusercontent.com/s/" + file + "?dl=1";
+    var url = file;
+    if (!selection.startsWith("local")) {
+        var url = "https://www.dl.dropboxusercontent.com/s/" + file + "?dl=1";
+    }
 	var req = new XMLHttpRequest();
 	var loadingProgressText = document.getElementById("loadingText");
 	var loadingProgressBar = document.getElementById("loadingProgressBar");
@@ -239,7 +243,7 @@ var selectVolume = function() {
 	var selection = document.getElementById("volumeList").value;
 	history.replaceState(history.state, "#" + selection, "#" + selection);
 
-	loadVolume(volumes[selection], function(file, dataBuffer) {
+	loadVolume(selection, function(file, dataBuffer) {
 		var m = file.match(fileRegex);
 		volDims = [parseInt(m[2]), parseInt(m[3]), parseInt(m[4])];
 
